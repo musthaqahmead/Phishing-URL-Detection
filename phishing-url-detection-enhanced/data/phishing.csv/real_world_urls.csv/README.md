@@ -1,0 +1,22 @@
+phishing_url_detection/
+│
+├── data/
+│   ├── phishing.csv
+│   └── legitimate.csv
+│
+├── features/
+│   ├── __init__.py
+│   └── feature_extraction.py
+│
+├── models/
+│   ├── __init__.py
+│   ├── model_training.py
+│   └── model_evaluation.py
+│
+├── utils/
+│   ├── __init__.py
+│   └── google_safe_browsing.py
+│
+├── app.py
+├── requirements.txt
+└── README.md

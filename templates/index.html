@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI-powered phishing URL detection tool to check link safety.">
+    <meta name="keywords" content="phishing url, phishing, cyber security, machine learning, classifier, python, url safety, link checker, safe browsing">
+    <meta name="author" content="MUSTHAQ">
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+        integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+
+    <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Phishing URL Detection</title>
+</head>
+
+<body>
+    <div class="space-bg"></div>
+    <!-- Cybersecurity Background Elements -->
+    <div class="cyber-bg">
+        <div class="cyber-circle circle1"></div>
+        <div class="cyber-circle circle2"></div>
+        <div class="cyber-grid"></div>
+    </div>
+
+    <!-- Phishing Sticker Background -->
+    <div class="phishing-sticker-bg"></div>
+    <div class="sticker2-bg"></div>
+
+    <!-- Hero section -->
+    <div class="hero-title">
+        <h1 class="main-title">PHISHING URL DETECTION</h1>
+        <div class="title-underline"></div>
+    </div>
+
+    <div class="container main-content scroll-transition">
+        <!-- Main glassy container -->
+        <div class="glass-card">
+            <!-- Search section -->
+            <div class="search-section">
+                <form action="/" method="post" class="search-form" id="url-form">
+                    <div class="search-group">
+                        <input type="url"
+                               class="search-input"
+                               name="url"
+                               id="url-input"
+                               placeholder="Enter URL to check (e.g., https://www.google.com)"
+                               value="{{ url if url else '' }}" {# Keep URL in input after submit #}
+                               required>
+                        <button type="submit" class="search-button" id="submit-button">
+                            <span>Analyze URL</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results section -->
+            <div class="results-section">
+                <div id="loading-message" style="display: none;">
+                    Processing, please wait a moment...
+                </div>
+                
+                {# Display error message if any #}
+                {% if error %}
+                <div class="error-container">
+                    <div class="alert alert-warning">
+                        <strong>{{ error }}</strong>
+                        <div class="retry-section">
+                            <p>You can:</p>
+                            <ul>
+                                {% if 'internet' in error.lower() %}
+                                    <li>Check your internet connection</li>
+                                    <li>Verify your network settings</li>
+                                {% elif 'api' in error.lower() %}
+                                    <li>Try again in a few minutes</li>
+                                    <li>Contact support if the problem persists</li>
+                                {% else %}
+                                    <li>Check your internet connection</li>
+                                    <li>Verify the URL is correct</li>
+                                    <li>Try again in a few minutes</li>
+                                {% endif %}
+                            </ul>
+                            <button onclick="retryAnalysis()" class="btn btn-primary">Try Again</button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {# Display results only if a URL was submitted and analysis was attempted #}
+                {% if url and safety_score is not none and not error %}
+                <div class="result-card">
+                    <div class="url-display">
+                        <a href="{{ final_url if final_url else url }}" target="_blank" rel="noopener noreferrer">
+                            {{ final_url if final_url else url }}
+                        </a>
+                        {% if final_url and url != final_url %}
+                            <small>(Initial: {{ url }})</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="prediction-container">
+                        <div id="prediction-message" class="prediction-display">
+                            {% if prediction == 1 %}
+                                Analysis Result: <strong>SAFE</strong> (Score: {{ safety_score }}%)
+                            {% else %}
+                                Analysis Result: <strong>DANGEROUS</strong> (Score: {{ safety_score }}%)
+                            {% endif %}
+                        </div>
+                        <!-- Buttons shown based on prediction -->
+                        <button id="safe-button" class="action-button safe" style="display: {% if prediction == 1 %}block{% else %}none{% endif %};">
+                            ✅ SAFE TO CONTINUE
+                        </button>
+                        <button id="danger-button" class="action-button danger" style="display: {% if prediction != 1 %}block{% else %}none{% endif %};">
+                            ⚠️ DANGEROUS - DO NOT PROCEED
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Analysis Results Card (Only shown when analysis results are available) -->
+        {% if feature_analysis and url %} {# Ensure feature_analysis exists #}
+        <div class="analysis-card scroll-transition">
+            <h2>URL Analysis Details</h2>
+            <div class="analysis-header">
+                <h3>Safety Score: {{ safety_score | default('N/A') }}%</h3>
+                 {# Add Domain Category if available from backend #}
+                 {# {% if domain_category %}
+                 <div class="domain-category">
+                     <span class="badge badge-info">Category: {{ domain_category }}</span>
+                 </div>
+                 {% endif %} #}
+                <div class="timestamp">
+                    Analyzed: {{ analysis_timestamp | default('N/A') }}
+                </div>
+            </div>
+
+            {# Main Warning/Success Alert based on prediction #}
+            {% if is_unsafe %} {# Use the boolean flag from backend #}
+            <div class="alert alert-danger severity-alert" role="alert">
+                <h4><span class="alert-icon">🚨</span> Warning: High Risk Detected!</h4>
+                {% if feature_analysis.severity_counts %}
+                <div class="severity-summary">
+                    <p>Detected Issues by Severity:</p>
+                    <ul>
+                        {% if feature_analysis.severity_counts.HIGH > 0 %}
+                        <li class="severity-high">{{ feature_analysis.severity_counts.HIGH }} High Severity</li>
+                        {% endif %}
+                        {% if feature_analysis.severity_counts.MEDIUM > 0 %}
+                        <li class="severity-medium">{{ feature_analysis.severity_counts.MEDIUM }} Medium Severity</li>
+                        {% endif %}
+                        {% if feature_analysis.severity_counts.LOW > 0 %}
+                        <li class="severity-low">{{ feature_analysis.severity_counts.LOW }} Low Severity</li>
+                        {% endif %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+             <div class="alert alert-success severity-alert" role="alert">
+                <h4><span class="alert-icon">🛡️</span> Low Risk Detected</h4>
+                 <p>This URL appears to be safe based on the analysis score of {{ safety_score | default('N/A') }}%.</p>
+            </div>
+            {% endif %}
+
+            <div class="analysis-details">
+                {# Risk Factors (Unsafe Features) #}
+                {% if feature_analysis.unsafe %}
+                <div class="features-section unsafe-features">
+                    <h4>Risk Factors Identified ({{ feature_analysis.unsafe|length }})</h4>
+                    <ul>
+                        {# *** THIS LINE IS CORRECTED - NO SORT FILTER *** #}
+                        {% for risk in feature_analysis.unsafe %}
+                         <li class="severity-{{ risk.severity|lower }}">
+                            <span class="feature-icon">⚠️</span>
+                            <strong>{{ risk.name }}</strong>
+                            <p>{{ risk.explanation }}</p>
+                            <span class="severity-badge severity-{{ risk.severity|lower }}">{{ risk.severity }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {# Positive Indicators (Safe Features) #}
+                {% if feature_analysis.safe %}
+                <div class="features-section safe-features">
+                    <h4>Positive Indicators ({{ feature_analysis.safe|length }})</h4>
+                    <ul>
+                        {% for feature in feature_analysis.safe %}
+                        <li>
+                            <span class="feature-icon">✅</span>
+                            <strong>{{ feature.name }}</strong>
+                            <p>{{ feature.explanation }}</p>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {# Neutral Observations #}
+                {% if feature_analysis.neutral %}
+                <div class="features-section neutral-features">
+                    <h4>Neutral Observations ({{ feature_analysis.neutral|length }})</h4>
+                    <ul>
+                         {# Updated loop to handle dictionary structure #}
+                        {% for feature in feature_analysis.neutral %}
+                        <li>
+                            <span class="feature-icon">📊</span>
+                             <strong>{{ feature.name }}</strong>
+                            <p>{{ feature.explanation }}</p>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+
+            {# Recommendations #}
+            {% if recommendations %}
+            <div class="recommendations">
+                <h4>Recommendations:</h4>
+                {# Use <pre> for better formatting of multi-line recommendations #}
+                <pre><code>{{ recommendations }}</code></pre> {# Display recommendations directly #}
+            </div>
+            {% endif %}
+
+        </div>
+        {% endif %} {# End of feature_analysis block #}
+
+    </div> <!-- End .container -->
+
+    <footer class="copyright">
+         <!-- Ensure current_year is passed from Flask -->
+        Developed by Musthaq , Shamoon , Fazal , Zulfan | Phishing URL Detection Tool © {{ current_year }}
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
+        integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+        crossorigin="anonymous"></script>
+
+    <script>
+        // Ensure this script runs after the DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if prediction data is available from the backend
+            {% if prediction is not none and safety_score is not none %}
+                // Get prediction (1 for safe, -1 for unsafe) and safety score
+                let predictionValue = parseInt('{{ prediction }}');
+                let safetyScore = parseFloat('{{ safety_score }}');
+
+                const predictionMessageEl = document.getElementById('prediction-message');
+                const safeButtonEl = document.getElementById('safe-button');
+                const dangerButtonEl = document.getElementById('danger-button');
+
+                if (!predictionMessageEl || !safeButtonEl || !dangerButtonEl) {
+                    console.error("Prediction elements not found!");
+                    return; // Exit if elements are missing
+                }
+
+                // Clear previous states first
+                predictionMessageEl.classList.remove('prediction-safe', 'prediction-danger', 'shake-animation');
+                safeButtonEl.style.display = 'none';
+                dangerButtonEl.style.display = 'none';
+
+                // --- Logic based on prediction value ---
+                if (predictionValue === 1) {
+                    // Safe website (prediction is 1)
+                    predictionMessageEl.innerHTML = `Analysis Result: <strong>SAFE</strong> (Score: ${safetyScore}%)`;
+                    predictionMessageEl.classList.add('prediction-safe');
+                    safeButtonEl.style.display = 'block'; // Show SAFE button
+                } else {
+                    // Unsafe website (prediction is -1 or potentially other non-1 value)
+                    predictionMessageEl.innerHTML = `Analysis Result: <strong>DANGEROUS</strong> (Score: ${safetyScore}%)`;
+                    predictionMessageEl.classList.add('prediction-danger', 'shake-animation'); // Add shake for danger
+                    dangerButtonEl.style.display = 'block'; // Show DANGER button
+                }
+            {% endif %}
+        });
+
+         // Optional: Add smooth scroll for anchor links if needed
+         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+             anchor.addEventListener('click', function (e) {
+                 e.preventDefault();
+                 document.querySelector(this.getAttribute('href')).scrollIntoView({
+                     behavior: 'smooth'
+                 });
+             });
+         });
+    </script>
+
+    <script>
+        // Wait for the DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlForm = document.getElementById('url-form');
+            const loadingMessage = document.getElementById('loading-message');
+            const submitButton = document.getElementById('submit-button');
+            const resultsSection = document.querySelector('.results-section'); // Find results area
+
+            if (urlForm && loadingMessage && submitButton && resultsSection) {
+                urlForm.addEventListener('submit', function() {
+                    // Hide any previous results/errors immediately
+                    // Find existing result cards or alerts and hide them
+                    const existingResultCard = resultsSection.querySelector('.result-card');
+                    const existingAlert = resultsSection.querySelector('.alert');
+                    if (existingResultCard) existingResultCard.style.display = 'none';
+                    if (existingAlert) existingAlert.style.display = 'none';
+
+                    // Show the loading message
+                    loadingMessage.style.display = 'block';
+
+                    // Optional: Disable button and change text
+                    submitButton.disabled = true;
+                    const buttonSpan = submitButton.querySelector('span');
+                    if (buttonSpan) {
+                        buttonSpan.textContent = 'Analyzing...';
+                    }
+                });
+            } else {
+                console.error('Form, loading message, results section, or submit button not found!');
+            }
+        });
+    </script>
+
+    <script>
+        function retryAnalysis() {
+            // Get the current URL from the input field
+            const urlInput = document.getElementById('url-input');
+            const currentUrl = urlInput.value;
+            
+            if (currentUrl) {
+                // Submit the form with the current URL
+                document.getElementById('url-form').submit();
+            } else {
+                // If no URL, just reload the page
+                window.location.reload();
+            }
+        }
+    </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const faders = document.querySelectorAll('.fade-in-section');
+        const appearOptions = {
+            threshold: 0.15,
+            rootMargin: "0px 0px -50px 0px"
+        };
+        const appearOnScroll = new IntersectionObserver(function(entries, appearOnScroll) {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add('is-visible');
+                appearOnScroll.unobserve(entry.target);
+            });
+        }, appearOptions);
+
+        faders.forEach(fader => {
+            appearOnScroll.observe(fader);
+        });
+    });
+    </script>
+
+    <script>
+      // Animate glass cards on scroll
+      document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.glass-card');
+        const observer = new IntersectionObserver((entries, obs) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              obs.unobserve(entry.target); // Animate only once
+            }
+          });
+        }, { threshold: 0.15 });
+        cards.forEach(card => observer.observe(card));
+      });
+    </script>
+</body>
+</html>
