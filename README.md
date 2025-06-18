@@ -2,7 +2,14 @@
 
 A complete web-based solution that uses **Machine Learning** and **External Threat Intelligence APIs** to identify and classify phishing URLs. This system integrates URL feature extraction, model training, and a user-friendly Flask-based web interface to enhance internet safety.
 
-![Web Interface - Example](https://github.com/user-attachments/assets/17ee7922-8cee-4543-a470-02459c21d1de)
+![Web Interface - Example](https://github.com/user-attachments/assets/ca78375f-bc6f-475b-a7ad-efbeae12df2b)
+
+![Safe URL Interface](https://github.com/user-attachments/assets/787ff2f6-022e-49cf-bbf6-f62a66cff2ae)
+
+### Dangerous URL Result
+
+![Dangerous URL Interface](https://github.com/user-attachments/assets/dd67a6f8-2f03-4f2d-b411-2cbd0ac3b7a7)
+
 
 
 ---
