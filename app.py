@@ -31,9 +31,9 @@ FEATURES_PATH = os.path.join(PICKLE_DIR, "feature_names.json")
 EXPECTED_FEATURE_COUNT_NUMERICAL = 41  # Updated for VT check feature
 DANGER_THRESHOLD = 45  # Score below which we force classification as DANGEROUS
 GSB_API_KEY = (
-    "AIzaSyDZL7mqndoajUZ9wjBnu4TEgqgJEAcYkKg"  # ***** PASTE YOUR KEY HERE *****
+    "# ***** PASTE YOUR KEY HERE *****"
 )
-VT_API_KEY = "e2f8e4692d0272cd2e207c9365b352e49708691ddd58f5bfb86efe7423ec1251"  # ***** PASTE YOUR VT KEY HERE *****
+VT_API_KEY = "# ***** PASTE YOUR VT KEY HERE *****"
 # --- End Constants ---
 
 # --- FEATURE_EXPLANATIONS Dictionary (Must cover indices 0-40) ---
