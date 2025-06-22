@@ -1,5 +1,4 @@
-# app.py (Full Corrected Code - Version for 41 Features including VT)
-
+# app.py 
 from flask import Flask, render_template, request
 from requests.exceptions import Timeout, RequestException
 import pickle
